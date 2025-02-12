@@ -22,7 +22,8 @@ class Canvas {
     }
 
     clear () {
-
+        const ctx = this.elem.getContext("2d");
+        ctx.fillRect(0, 0, this.elem.width, this.elem.height);
     }
 }
 
@@ -94,9 +95,24 @@ function main () {
     const canvas = new Canvas(document.getElementById("main_canvas"));
     canvas.set_h(500);
     canvas.set_w(500);
+    const error_output = document.getElementById("error_output");
 
     document.getElementById("graph_input").addEventListener("keyup", (e) => {
-        const g = parse_graph_input(e.target.value);
-        console.log(g.is_tree());
+        error_output.textContent = "";
+        try {
+            const graph = parse_graph_input(e.target.value);
+            if (!g.is_tree()) {
+                throw new Error("入力されたグラフが木ではありません。");
+            }
+
+            // 描画アルゴリズムに渡す
+            draw(canvas, graph);
+        }
+        catch (e) {
+            error_output.textContent = e;
+        }
     });
+}
+
+function draw (canvas, graph) {
 }
