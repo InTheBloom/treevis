@@ -26,6 +26,66 @@ class Canvas {
     }
 }
 
+class Graph {
+    edge_count = 0;
+    adj = {};
+    add_edge (u, v) {
+        if (!this.adj.hasOwnProperty(u)) this.adj[u] = {};
+        if (!this.adj.hasOwnProperty(v)) this.adj[v] = {};
+        this.edge_count++;
+
+        this.adj[u][v] = true;
+        this.adj[v][u] = true;
+    }
+
+    is_tree () {
+        if (this.edge_count + 1 != Object.keys(this.adj).length) {
+            return false;
+        }
+        let begin = Infinity;
+        for (const p in this.adj) begin = Math.min(begin, p);
+
+        const vis = {};
+        const dfs = (pos) => {
+            for (const p in this.adj[pos]) {
+                if (vis.hasOwnProperty(p)) continue;
+                vis[p] = true;
+                dfs(p);
+            }
+        }
+        dfs(begin);
+        console.log(vis);
+
+        return Object.keys(vis).length == Object.keys(this.adj).length;
+    }
+
+    debug () {
+        console.log(this.adj);
+    }
+}
+
+// 入力の解析
+function parse_graph_input (S) {
+    const g = new Graph();
+    const lines = S.trim().split('\n');
+
+    const regex = /[0123456789]{1,}/;
+    for (const line of lines) {
+        const tokens = line.split(' ');
+        if (tokens.length != 2) {
+            throw new Error("各行\"{数字} {数字}\"の形式に従ってください。");
+        }
+        for (const token of tokens) {
+            if (!regex.test(token)) {
+                throw new Error("数字以外を入力しないでください。");
+            }
+        }
+
+        g.add_edge(tokens[0], tokens[1]);
+    }
+    return g;
+}
+
 // やりたい仕事
 // - 入力監視 -> 描画の発火指定
 // - canvasの初期化
@@ -35,5 +95,8 @@ function main () {
     canvas.set_h(500);
     canvas.set_w(500);
 
-    document.getElementById("graph_input").addEventListener("keyup", (e) => console.log(e.target.value));
+    document.getElementById("graph_input").addEventListener("keyup", (e) => {
+        const g = parse_graph_input(e.target.value);
+        console.log(g.is_tree());
+    });
 }
