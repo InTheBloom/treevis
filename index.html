@@ -9,6 +9,28 @@
         <script src="src/index.js"></script>
     </head>
     <body>
-        <h1>アンダー・コンストラクション</h1>
+        <h1>木の描画</h1>
+        <div
+            style="display: flex; flex-direction: row; gap: 100px;">
+            <div>
+                <p style="margin: 0;">グラフ入力</p>
+                <textarea
+                    id="graph_input"
+                    rows="20"
+                    cols="30"
+                    style="resize: none;"></textarea>
+                <p>例</p>
+                <ul>
+                    <li>u v: 頂点uから頂点vへ辺をはる</li>
+                    <li>u v s: 頂点uから頂点vへの辺にラベルsをつける</li>
+                    <li>u s: 頂点uにラベルlをつける</li>
+                </ul>
+            </div>
+            <div>
+                <canvas
+                    id="main_canvas"
+                    style="border: 1px solid black;"></canvas>
+            </div>
+        </div>
     </body>
 </html>
