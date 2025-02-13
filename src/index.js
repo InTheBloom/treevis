@@ -2,6 +2,11 @@ document.addEventListener("DOMContentLoaded", () => {
     main();
 });
 
+function strlen (str) {
+  const segmenter = new Intl.Segmenter("ja-JP", { granularity: "grapheme" });
+  return [...segmenter.segment(str)].length;
+}
+
 class Canvas {
     constructor (elem) {
         this.elem = elem;
@@ -79,9 +84,11 @@ class Canvas {
         ctx.font = `${this.radius}px serif`;
 
         ctx.fillStyle = "rgba(0 0 0 / 100%)";
+        const len = strlen(`${label}`);
+
         ctx.fillText(
             `${label}`,
-            cod[0] - this.radius / 3.6,
+            cod[0] - len * this.radius / 3.6,
             cod[1] + this.radius / 2.7,
         );
     }
