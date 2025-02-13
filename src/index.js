@@ -65,19 +65,36 @@ class Canvas {
         const cod = this.lattice_to_px(x, y);
         const ctx = this.elem.getContext("2d");
         ctx.beginPath();
+        // 領域の消去
         ctx.arc(
             cod[0],
             cod[1],
             this.radius,
             0, 2 * Math.PI
         );
+        ctx.fillStyle = "rgba(255 255 255 / 100%)";
+        ctx.fill();
+
         ctx.stroke();
         ctx.font = `${this.radius}px serif`;
+
+        ctx.fillStyle = "rgba(0 0 0 / 100%)";
         ctx.fillText(
             `${label}`,
             cod[0] - this.radius / 3.6,
             cod[1] + this.radius / 2.7,
         );
+    }
+
+    draw_edge (x1, y1, x2, y2) {
+        const cod1 = this.lattice_to_px(x1, y1);
+        const cod2 = this.lattice_to_px(x2, y2);
+
+        const ctx = this.elem.getContext("2d");
+        ctx.beginPath();
+        ctx.moveTo(cod1[0], cod1[1]);
+        ctx.lineTo(cod2[0], cod2[1]);
+        ctx.stroke();
     }
 
     clear () {
@@ -116,6 +133,34 @@ class Graph {
         dfs(begin);
 
         return Object.keys(vis).length == Object.keys(this.adj).length;
+    }
+
+    // 本当は別の人に仕事させた方がいいと思うけど、ここでレイアウトを作ってしまうよ。
+    // まずはシンプルなやつから
+    get_filled_layout () {
+        // 木であることを仮定していい。
+        const res = [];
+
+        const left = {};
+        const dfs = (pos, par, h) => {
+            if (!left.hasOwnProperty(h)) left[h] = 0;
+            // 登録
+            const idx = res.length;
+            res.push({label: pos, cod: [left[h], h], neibors: []});
+            left[h]++;
+
+            for (const nex in this.adj[pos]) {
+                if (nex == par) continue;
+                const nidx = res.length;
+                dfs(nex, pos, h + 1);
+                res[idx].neibors.push(nidx);
+            }
+        }
+
+        let begin = Infinity;
+        for (const p in this.adj) begin = Math.min(begin, p);
+        dfs(begin, Infinity, 0);
+        return res;
     }
 
     debug () {
@@ -174,7 +219,32 @@ function main () {
 }
 
 function draw (canvas, graph) {
-    canvas.set_radius(100);
-    canvas.split_canvas(10, 10);
-    canvas.draw_vertex(2, 2, 0);
+    canvas.set_radius(10);
+    canvas.set_margin_w(50);
+    canvas.set_margin_h(50);
+
+    const layout = graph.get_filled_layout();
+    {
+        let max_x = 1, max_y = 1;
+        for (const v of layout) {
+            max_x = Math.max(max_x, v.cod[0]);
+            max_y = Math.max(max_y, v.cod[1]);
+        }
+        canvas.split_canvas(max_x, max_y);
+    }
+
+    for (let i = 0; i < layout.length; i++) {
+        const cod1 = layout[i].cod;
+        for (const neibor of layout[i].neibors) {
+            const cod2 = layout[neibor].cod;
+            canvas.draw_edge(cod1[0], cod1[1], cod2[0], cod2[1]);
+        }
+    }
+
+    for (let i = 0; i < layout.length; i++) {
+        const label = layout[i].label;
+        const cod = layout[i].cod;
+
+        canvas.draw_vertex(cod[0], cod[1], label);
+    }
 }
