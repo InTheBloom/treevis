@@ -114,12 +114,12 @@ class Graph {
     edge_count = 0;
     adj = {};
     add_edge (u, v) {
-        if (!this.adj.hasOwnProperty(u)) this.adj[u] = {};
-        if (!this.adj.hasOwnProperty(v)) this.adj[v] = {};
+        if (!this.adj.hasOwnProperty(u)) this.adj[u] = [];
+        if (!this.adj.hasOwnProperty(v)) this.adj[v] = [];
         this.edge_count++;
 
-        this.adj[u][v] = true;
-        this.adj[v][u] = true;
+        this.adj[u].push(v);
+        this.adj[v].push(u);
     }
 
     is_tree () {
@@ -131,7 +131,7 @@ class Graph {
 
         const vis = {};
         const dfs = (pos) => {
-            for (const p in this.adj[pos]) {
+            for (const p of this.adj[pos]) {
                 if (vis.hasOwnProperty(p)) continue;
                 vis[p] = true;
                 dfs(p);
@@ -146,21 +146,21 @@ class Graph {
     // まずはシンプルなやつから
     get_filled_layout () {
         // 木であることを仮定していい。
-        const res = [];
+        const res = {};
 
         const left = {};
         const dfs = (pos, par, h) => {
             if (!left.hasOwnProperty(h)) left[h] = 0;
             // 登録
             const idx = res.length;
-            res.push({label: pos, cod: [left[h], h], neibors: []});
+            res[pos] = {label: `${pos}`, cod: [left[h], h], neibors: []};
             left[h]++;
 
-            for (const nex in this.adj[pos]) {
+            for (const nex of this.adj[pos]) {
                 if (nex == par) continue;
                 const nidx = res.length;
                 dfs(nex, pos, h + 1);
-                res[idx].neibors.push(nidx);
+                res[pos].neibors.push(nex);
             }
         }
 
@@ -233,24 +233,24 @@ function draw (canvas, graph) {
     const layout = graph.get_filled_layout();
     {
         let max_x = 1, max_y = 1;
-        for (const v of layout) {
-            max_x = Math.max(max_x, v.cod[0]);
-            max_y = Math.max(max_y, v.cod[1]);
+        for (const v in layout) {
+            max_x = Math.max(max_x, layout[v].cod[0]);
+            max_y = Math.max(max_y, layout[v].cod[1]);
         }
         canvas.split_canvas(max_x, max_y);
     }
 
-    for (let i = 0; i < layout.length; i++) {
-        const cod1 = layout[i].cod;
-        for (const neibor of layout[i].neibors) {
+    for (const v in layout) {
+        const cod1 = layout[v].cod;
+        for (const neibor of layout[v].neibors) {
             const cod2 = layout[neibor].cod;
             canvas.draw_edge(cod1[0], cod1[1], cod2[0], cod2[1]);
         }
     }
 
-    for (let i = 0; i < layout.length; i++) {
-        const label = layout[i].label;
-        const cod = layout[i].cod;
+    for (const v in layout) {
+        const label = layout[v].label;
+        const cod = layout[v].cod;
 
         canvas.draw_vertex(cod[0], cod[1], label);
     }
