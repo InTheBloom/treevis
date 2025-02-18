@@ -286,10 +286,11 @@ function main () {
     canvas.set_w(500);
     const error_output = document.getElementById("error_output");
 
-    document.getElementById("graph_input").addEventListener("keyup", (e) => {
+    const graph_input = document.getElementById("graph_input");
+    const draw_graph = (input) => {
         error_output.textContent = "";
         try {
-            const graph = parse_graph_input(e.target.value);
+            const graph = parse_graph_input(input);
             if (!graph.is_tree()) {
                 throw new Error("入力されたグラフが木ではありません。");
             }
@@ -301,7 +302,11 @@ function main () {
         catch (e) {
             error_output.textContent = e;
         }
-    });
+    }
+
+    // 最初に実行 + イベントハンドラに登録
+    draw_graph(graph_input.value);
+    graph_input.addEventListener("keyup", (e) => draw_graph(e.target.value));
 }
 
 function draw (canvas, graph) {
