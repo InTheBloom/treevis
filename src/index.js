@@ -316,6 +316,20 @@ function main () {
         }
     }
 
+    document.getElementById("download_as_png").addEventListener("click", () => {
+        canvas.elem.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            console.log(a);
+            a.href = url;
+            a.download = "tree.png";
+            a.click();
+
+            URL.revokeObjectURL(url);
+        });
+    });
+
     // キャンバスサイズ設定 + 再描画
     const width_input = document.getElementById("width_input");
     const height_input = document.getElementById("height_input");
