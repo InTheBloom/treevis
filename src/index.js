@@ -281,8 +281,12 @@ function parse_graph_input (S) {
 
 function main () {
     const canvas = new Canvas(document.getElementById("main_canvas"));
+    canvas.set_margin_w(50);
+    canvas.set_margin_h(50);
     canvas.set_h(500);
     canvas.set_w(500);
+    canvas.set_radius(10);
+
     const error_output = document.getElementById("error_output");
 
     const graph_input = document.getElementById("graph_input");
@@ -312,17 +316,36 @@ function main () {
         }
     }
 
-    // 最初に実行 + イベントハンドラに登録
-    draw_graph(graph_input.value, root_input.value);
+    // キャンバスサイズ設定 + 再描画
+    const width_input = document.getElementById("width_input");
+    const height_input = document.getElementById("height_input");
+    const radius_input = document.getElementById("radius_input");
+
+    width_input.addEventListener("input", (e) => {
+        canvas.set_w(parseInt(width_input.value));
+        draw_graph(graph_input.value, root_input.value);
+    });
+    height_input.addEventListener("input", (e) => {
+        canvas.set_h(parseInt(height_input.value));
+        draw_graph(graph_input.value, root_input.value);
+    });
+    radius_input.addEventListener("input", (e) => {
+        canvas.set_radius(parseInt(radius_input.value));
+        draw_graph(graph_input.value, root_input.value);
+    });
+    canvas.set_w(parseInt(width_input.value));
+    canvas.set_h(parseInt(height_input.value));
+    canvas.set_radius(parseInt(radius_input.value));
+
+    // イベントハンドラに登録
     graph_input.addEventListener("keyup", (e) => draw_graph(graph_input.value, root_input.value));
     root_input.addEventListener("input", (e) => draw_graph(graph_input.value, root_input.value));
+
+    // 最初に描画
+    draw_graph(graph_input.value, root_input.value);
 }
 
 function draw (canvas, graph, root) {
-    canvas.set_radius(10);
-    canvas.set_margin_w(50);
-    canvas.set_margin_h(50);
-
     const layout = graph.get_balanced_layout(root);
     {
         let max_x = 1, max_y = 1;
