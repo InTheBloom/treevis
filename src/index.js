@@ -147,9 +147,13 @@ class Graph {
 
     // 本当は別の人に仕事させた方がいいと思うけど、ここでレイアウトを作ってしまうよ。
     // まずはシンプルなやつから
-    get_filled_layout () {
+    get_filled_layout (root) {
         // 木であることを仮定していい。
         const res = {};
+        if (this.edge_count == 0) return res;
+        if (!this.adj.hasOwnProperty(root)) {
+            throw new Error("指定された根がグラフに存在しません");
+        }
 
         const left = {};
         const dfs = (pos, par, h) => {
@@ -167,17 +171,18 @@ class Graph {
             }
         }
 
-        let begin = Infinity;
-        for (const p in this.adj) begin = Math.min(begin, p);
-        if (begin < Infinity) {
-            dfs(begin, Infinity, 0);
-        }
+        dfs(root, Infinity, 0);
         return res;
     }
 
     // 少し複雑なやつ
-    get_balanced_layout () {
+    get_balanced_layout (root) {
         const res = {};
+
+        if (this.edge_count == 0) return res;
+        if (!this.adj.hasOwnProperty(root)) {
+            throw new Error("指定された根がグラフに存在しません");
+        }
 
         const padding = {};
         const mod = {};
@@ -225,11 +230,7 @@ class Graph {
             res[pos].cod = [cod_x, h];
         }
 
-        let begin = Infinity;
-        for (const p in this.adj) begin = Math.min(begin, p);
-        if (begin < Infinity) {
-            dfs(begin, Infinity, 0);
-        }
+        dfs(root, Infinity, 0);
 
         // modを精算
         const dfs2 = (pos, par, acc) => {
@@ -241,9 +242,7 @@ class Graph {
                 dfs2(nex, pos, acc);
             }
         }
-        if (begin < Infinity) {
-            dfs2(begin, Infinity, 0);
-        }
+        dfs2(root, Infinity, 0);
 
         return res;
     }
@@ -287,17 +286,26 @@ function main () {
     const error_output = document.getElementById("error_output");
 
     const graph_input = document.getElementById("graph_input");
-    const draw_graph = (input) => {
+    const root_input = document.getElementById("root_input");
+    const draw_graph = (graph_string, root_string) => {
         error_output.textContent = "";
         try {
-            const graph = parse_graph_input(input);
+            const graph = parse_graph_input(graph_string);
+            const root = (() => {
+                const res = parseInt(root_string);
+                if (!isNaN(res)) return res;
+                let mi = Infinity;
+                for (const v in graph.adj) mi = Math.min(mi, v);
+                return mi;
+            })();
+
             if (!graph.is_tree()) {
                 throw new Error("入力されたグラフが木ではありません。");
             }
 
             // 画面クリア -> 描画アルゴリズムに渡す
             canvas.clear();
-            draw(canvas, graph);
+            draw(canvas, graph, root);
         }
         catch (e) {
             error_output.textContent = e;
@@ -305,16 +313,17 @@ function main () {
     }
 
     // 最初に実行 + イベントハンドラに登録
-    draw_graph(graph_input.value);
-    graph_input.addEventListener("keyup", (e) => draw_graph(e.target.value));
+    draw_graph(graph_input.value, root_input.value);
+    graph_input.addEventListener("keyup", (e) => draw_graph(graph_input.value, root_input.value));
+    root_input.addEventListener("input", (e) => draw_graph(graph_input.value, root_input.value));
 }
 
-function draw (canvas, graph) {
+function draw (canvas, graph, root) {
     canvas.set_radius(10);
     canvas.set_margin_w(50);
     canvas.set_margin_h(50);
 
-    const layout = graph.get_balanced_layout();
+    const layout = graph.get_balanced_layout(root);
     {
         let max_x = 1, max_y = 1;
         for (const v in layout) {
