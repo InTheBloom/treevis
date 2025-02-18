@@ -123,6 +123,9 @@ class Graph {
     }
 
     is_tree () {
+        // 空グラフは木とみなす定義を採用。
+        if (this.edge_count == 0) return true;
+
         if (this.edge_count + 1 != Object.keys(this.adj).length) {
             return false;
         }
@@ -166,7 +169,82 @@ class Graph {
 
         let begin = Infinity;
         for (const p in this.adj) begin = Math.min(begin, p);
-        dfs(begin, Infinity, 0);
+        if (begin < Infinity) {
+            dfs(begin, Infinity, 0);
+        }
+        return res;
+    }
+
+    // 少し複雑なやつ
+    get_balanced_layout () {
+        const res = {};
+
+        const padding = {};
+        const mod = {};
+        const left = {};
+        const dfs = (pos, par, h) => {
+            if (!left.hasOwnProperty(h)) left[h] = 0;
+            res[pos] = {label: `${pos}`, cod: [], neibors: []};
+
+            // 葉
+            if (this.adj[pos].length == 1 && this.adj[pos][0] == par) {
+                res[pos].cod = [left[h], h];
+                left[h]++;
+                return;
+            }
+
+            for (const nex of this.adj[pos]) {
+                if (nex == par) continue;
+                res[pos].neibors.push(nex);
+                dfs(nex, pos, h + 1);
+            }
+
+            let fi = -1, la = -1;
+            // 逆辺があることに注意。
+            for (const nex of this.adj[pos]) {
+                if (nex == par) continue;
+                fi = nex;
+                break;
+            }
+            for (const nex of this.adj[pos]) {
+                if (nex == par) continue;
+                la = nex;
+            }
+
+            let cod_x = (res[fi].cod[0] + res[la].cod[0]) / 2;
+            // もし被るならパディングを設定
+
+            if (!padding.hasOwnProperty(h)) {
+                padding[h] = 0;
+            }
+            padding[h] = Math.max(padding[h], left[h] - cod_x);
+            mod[pos] = padding[h];
+            cod_x += padding[h];
+
+            left[h] = cod_x + 1;
+            res[pos].cod = [cod_x, h];
+        }
+
+        let begin = Infinity;
+        for (const p in this.adj) begin = Math.min(begin, p);
+        if (begin < Infinity) {
+            dfs(begin, Infinity, 0);
+        }
+
+        // modを精算
+        const dfs2 = (pos, par, acc) => {
+            res[pos].cod[0] += acc;
+            if (mod.hasOwnProperty(pos)) acc += mod[pos];
+
+            for (const nex of this.adj[pos]) {
+                if (nex == par) continue;
+                dfs2(nex, pos, acc);
+            }
+        }
+        if (begin < Infinity) {
+            dfs2(begin, Infinity, 0);
+        }
+
         return res;
     }
 
@@ -180,15 +258,16 @@ function parse_graph_input (S) {
     const g = new Graph();
     const lines = S.trim().split('\n');
 
-    const regex = /[0123456789]{1,}/;
+    const regex = /^0|([123456789][0123456789]{0,})$/;
     for (const line of lines) {
+        if (line == "") continue;
         const tokens = line.split(' ');
         if (tokens.length != 2) {
             throw new Error("各行\"{数字} {数字}\"の形式に従ってください。");
         }
         for (const token of tokens) {
             if (!regex.test(token)) {
-                throw new Error("数字以外を入力しないでください。");
+                throw new Error("数字以外を入力しないでください。または、先頭の余分な0は許容されません。");
             }
         }
 
@@ -230,7 +309,7 @@ function draw (canvas, graph) {
     canvas.set_margin_w(50);
     canvas.set_margin_h(50);
 
-    const layout = graph.get_filled_layout();
+    const layout = graph.get_balanced_layout();
     {
         let max_x = 1, max_y = 1;
         for (const v in layout) {
@@ -240,6 +319,7 @@ function draw (canvas, graph) {
         canvas.split_canvas(max_x, max_y);
     }
 
+    // 辺の描画
     for (const v in layout) {
         const cod1 = layout[v].cod;
         for (const neibor of layout[v].neibors) {
@@ -248,6 +328,7 @@ function draw (canvas, graph) {
         }
     }
 
+    // 頂点の描画
     for (const v in layout) {
         const label = layout[v].label;
         const cod = layout[v].cod;
